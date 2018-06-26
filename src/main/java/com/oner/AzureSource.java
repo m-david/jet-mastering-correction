@@ -1,13 +1,8 @@
 package com.oner;
 
 
-import com.microsoft.azure.documentdb.ConnectionPolicy;
-import com.microsoft.azure.documentdb.ConsistencyLevel;
-import com.microsoft.azure.documentdb.Document;
-import com.microsoft.azure.documentdb.DocumentClient;
-import com.microsoft.azure.documentdb.FeedOptions;
-
-import java.util.List;
+import com.microsoft.azure.documentdb.*;
+import com.oner.model.BiTemporalDoc;
 
 
 public class AzureSource {
@@ -21,8 +16,40 @@ public class AzureSource {
         }
     }
 
-
     static void readData(DocumentClient client) throws InterruptedException {
+
+        FeedOptions feedOptions = new FeedOptions();
+        feedOptions.setEnableCrossPartitionQuery(true);
+
+        String collectionLink = String.format("/dbs/%s/colls/%s", "ApiTest", "Instrument");
+        client
+                .queryDocuments(
+                        collectionLink,
+                        "SELECT top 100 * FROM r",
+                        feedOptions).getQueryIterable().forEach(
+                d -> createInstance(d)
+                //{}
+
+        );
+
+
+    }
+
+    private static void createInstance(Document d) {
+        System.out.println
+                (
+
+                        String.format("Description: %s, TransactionTime: %s, ValidityRange: %s, AxiomaDataId: %s, Source: %s, MaturityDate: %s, Currency: %s, CurrentCoupon: %.2f",
+                                d.get("Description"), d.get("TransactionTime"),
+                                d.get("ValidityRange"), d.get("AxiomaDataId"), d.get("Source"), d.getString("MaturityDate"),
+                                d.get("Currency"), d.getDouble("CurrentCoupon")
+                        )
+
+                );
+
+    }
+
+    static void readDataInstrumentCorrection(DocumentClient client) throws InterruptedException {
 
         FeedOptions feedOptions = new FeedOptions();
         feedOptions.setEnableCrossPartitionQuery(true);
@@ -31,10 +58,23 @@ public class AzureSource {
         client
                 .queryDocuments(
                         collectionLink,
-                        "SELECT * FROM r",
-                        feedOptions).getQueryIterable().forEach(d -> {
+                        "SELECT top 100 * FROM r",
+                        feedOptions).getQueryIterable().forEach(
+                                d -> System.out.println
+                                (
+                                    String.format("TransactionTime: %s, ValidityRange: %s, AxiomaDataId: %s, Source: %s, MaturityDate: %s",
+                                        d.get("TransactionTime"),
+                                        d.get("ValidityRange"), d.get("AxiomaDataId"), d.get("Source"), d.getString("MaturityDate")
+                                    )
+                                )
+                                //System.out.println(d)
 
-                });
+        //{}
+
+                );
+
+
+
 
     }
 }
